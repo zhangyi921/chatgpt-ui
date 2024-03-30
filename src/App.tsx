@@ -6,6 +6,7 @@ const openai = new OpenAI({
   apiKey:  localStorage.getItem("key")as string,
   dangerouslyAllowBrowser: true
 });
+const MAX_MESSAGES = 30
 
 type Message = OpenAI.Chat.Completions.ChatCompletionMessageParam
 function App() {
@@ -30,7 +31,7 @@ function App() {
       setMessages([...messagesAfterSend.slice(0, -1), {role: "assistant", content: response}])
       window.scrollTo(0, document.body.scrollHeight);
     }
-    while (messagesAfterSend.length > 5){
+    while (messagesAfterSend.length > MAX_MESSAGES){
       messagesAfterSend.shift()
     }
     setMessages([...messagesAfterSend.slice(0, -1), {role: "assistant", content: response}])
@@ -53,7 +54,7 @@ function App() {
       <textarea id="w3review" name="w3review" rows={5} cols={100} onChange={e => setMsgToEdit(e.target.value)} value={msgToEdit}>
       </textarea>
       <button onClick={() => send(msgToEdit)}>
-        Send
+        Send({messages.length}/{MAX_MESSAGES})
       </button>
     </>
   )
