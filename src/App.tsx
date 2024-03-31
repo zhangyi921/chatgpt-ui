@@ -55,26 +55,28 @@ function App() {
     <>
       <div style={{ display: "flex" }}>
         <h1>ChatGPT</h1>
-        <select name="model" onChange={e => { setModel(e.target.value); localStorage.setItem("model", e.target.value) }} value={model}>
+        <select name="model" style={{ margin: 20 }}onChange={e => { setModel(e.target.value); localStorage.setItem("model", e.target.value) }} value={model}>
           <option value="gpt-4-turbo-preview">gpt-4-turbo-preview</option>
           <option value="gpt-4">gpt-4</option>
         </select>
       </div>
 
-      <button onClick={() => setMessages([])} style={{position: "fixed", top: 30, right: 30}}>Clear all!</button>
+      <button onClick={() => setMessages([])} style={{ position: "fixed", top: 30, right: 30 }}>Clear all!</button>
 
       <div>
         {messages.map((msg, index) => <div key={index}>
           {msg.role == "user" ? <div>
             <div style={{ display: "flex" }}><h3 style={{ marginRight: 20 }}>User:</h3>
-              <button onClick={() => setMessages(removeByIndex([...messages], index))}>X</button></div>
+              {index == messages.length-2? <button style={{ marginRight: 20, margin: 10 }} onClick={() => {setMsgToEdit(msg.content as string); setMessages(messages.splice(0 ,messages.length-2))}}>Edit🖊️</button>:null}
+              <button style={{ marginRight: 20, margin: 10 }} onClick={() => setMessages(removeByIndex([...messages], index))}>❌</button>
+            </div>
 
             <p style={{ color: "#678fcf", fontSize: 20, whiteSpace: "pre-wrap" }}>{msg.content as string}</p>
           </div> : <div>
             <div style={{ display: "flex" }}><h3 style={{ marginRight: 20 }}>{model}:</h3>
-              <button onClick={() => setMessages(removeByIndex([...messages], index))}>X</button>
-              
-              </div>
+              <button style={{ marginRight: 20, margin: 10 }} onClick={() => setMessages(removeByIndex([...messages], index))}>❌</button>
+
+            </div>
             <div style={{ fontSize: 20 }}><Markdown>{msg.content as string}</Markdown></div>
             <hr />
           </div>}
