@@ -6,6 +6,10 @@ const openai = new OpenAI({
   apiKey: localStorage.getItem("key") as string,
   dangerouslyAllowBrowser: true
 });
+const limits: Record<string, number> = {
+  "gpt-4": 32769,
+  "gpt-4-turbo-preview": 512000
+}
 const MAX_MESSAGES = 30
 
 function removeByIndex(arr: any[], index: number) {
@@ -51,11 +55,15 @@ function App() {
       setModel(savedModel)
     }
   }, [])
+
+  const usedLimit =  Math.round(messages.reduce((accumulator, msg) => accumulator + (msg.content as string).length, 0,) / limits[model as string] * 10000)/100
+  const currentMsgUsage = Math.round(msgToEdit.length / limits[model as string] * 10000)/100
+  const combainedUsage = usedLimit + currentMsgUsage
   return (
     <>
       <div style={{ display: "flex" }}>
         <h1>ChatGPT</h1>
-        <select name="model" style={{ margin: 20 }}onChange={e => { setModel(e.target.value); localStorage.setItem("model", e.target.value) }} value={model}>
+        <select name="model" style={{ margin: 20 }} onChange={e => { setModel(e.target.value); localStorage.setItem("model", e.target.value) }} value={model}>
           <option value="gpt-4-turbo-preview">gpt-4-turbo-preview</option>
           <option value="gpt-4">gpt-4</option>
         </select>
@@ -67,7 +75,7 @@ function App() {
         {messages.map((msg, index) => <div key={index}>
           {msg.role == "user" ? <div>
             <div style={{ display: "flex" }}><h3 style={{ marginRight: 20 }}>User:</h3>
-              {index == messages.length-2? <button style={{ marginRight: 20, margin: 10 }} onClick={() => {setMsgToEdit(msg.content as string); setMessages(messages.splice(0 ,messages.length-2))}}>Edit🖊️</button>:null}
+              {index == messages.length - 2 ? <button style={{ marginRight: 20, margin: 10 }} onClick={() => { setMsgToEdit(msg.content as string); setMessages(messages.splice(0, messages.length - 2)) }}>Edit🖊️</button> : null}
               <button style={{ marginRight: 20, margin: 10 }} onClick={() => setMessages(removeByIndex([...messages], index))}>❌</button>
             </div>
 
@@ -89,6 +97,7 @@ function App() {
           Send({messages.length}/{MAX_MESSAGES})
         </button>
       </div>
+      <h4>Used limit: {usedLimit}%, current message usage: {currentMsgUsage}%, combained usage: <span style={{color: combainedUsage > 90? "red": "black"}}>{combainedUsage}</span>%</h4>
 
     </>
   )
