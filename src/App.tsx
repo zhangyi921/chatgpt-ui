@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Markdown from 'react-markdown'
 import './App.css'
 import OpenAI from 'openai'
