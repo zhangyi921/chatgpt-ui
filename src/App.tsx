@@ -102,7 +102,7 @@ function App() {
         </div>)}
       </div>
       <div style={{ display: "flex" }}>
-        <textarea id="w3review" name="w3review" rows={5} cols={100} onChange={e => setMsgToEdit(e.target.value)} onKeyDown={enterToSend ? (event) => { event.key == "Enter" && send(msgToEdit) } : undefined} value={msgToEdit}>
+        <textarea id="w3review" name="w3review" rows={5} cols={100} onChange={e => setMsgToEdit(e.target.value)} onKeyUp={enterToSend ? (event) => { event.key == "Enter" && send(msgToEdit) } : undefined} value={msgToEdit}>
         </textarea>
         <button onClick={() => send(msgToEdit)}>
           Send({messages.length}/{MAX_MESSAGES})
