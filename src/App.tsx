@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Markdown from 'react-markdown'
 import './App.css'
 import OpenAI from 'openai'
@@ -9,9 +9,9 @@ const openai = new OpenAI({
 
 
 const limits: Record<OpenAI.Chat.ChatModel, number> = {
-  "gpt-4o": 1280000*4,
-  "gpt-4": 8192*4,
-  "gpt-4-turbo": 1280000*4,
+  "gpt-4o": 1280000 * 4,
+  "gpt-4": 8192 * 4,
+  "gpt-4-turbo": 1280000 * 4,
 } as Record<OpenAI.Chat.ChatModel, number>
 const MAX_MESSAGES = 30
 
@@ -25,6 +25,7 @@ function removeByIndex(arr: any[], index: number) {
 
 type Message = OpenAI.Chat.Completions.ChatCompletionMessageParam
 function App() {
+  const [enterToSend, setEnterToSend] = useState<boolean>(true)
   const [messages, setMessages] = useState<Message[]>([])
   const [msgToEdit, setMsgToEdit] = useState("")
   const [model, setModel] = useState<OpenAI.Chat.ChatModel>("gpt-4")
@@ -57,10 +58,14 @@ function App() {
     if (savedModel !== null) {
       setModel(savedModel)
     }
+    const savedSetEnterToSend = localStorage.getItem("setEnterToSend")
+    if (savedSetEnterToSend !== null) {
+      setEnterToSend(savedSetEnterToSend == "1" ? true : false)
+    }
   }, [])
 
-  const usedLimit =  Math.round(messages.reduce((accumulator, msg) => accumulator + (msg.content as string).length, 0,) / limits[model] * 10000)/100
-  const currentMsgUsage = Math.round(msgToEdit.length / limits[model] * 10000)/100
+  const usedLimit = Math.round(messages.reduce((accumulator, msg) => accumulator + (msg.content as string).length, 0,) / limits[model] * 10000) / 100
+  const currentMsgUsage = Math.round(msgToEdit.length / limits[model] * 10000) / 100
   const combainedUsage = usedLimit + currentMsgUsage
   return (
     <>
@@ -68,6 +73,10 @@ function App() {
         <h1>ChatGPT</h1>
         <select name="model" style={{ margin: 20 }} onChange={e => { setModel(e.target.value as OpenAI.Chat.ChatModel); localStorage.setItem("model", e.target.value) }} value={model}>
           {Object.keys(limits).map((model, index) => <option key={index} value={model}>{model}</option>)}
+        </select>
+        <select name="model" style={{ margin: 20 }} onChange={e => { setEnterToSend(e.target.value == "1" ? true : false); localStorage.setItem("setEnterToSend", e.target.value) }} value={enterToSend ? "1" : "0"}>
+          <option value={"1"}>Enter to send</option>
+          <option value={"0"}>Only click to send</option>
         </select>
       </div>
 
@@ -93,13 +102,13 @@ function App() {
         </div>)}
       </div>
       <div style={{ display: "flex" }}>
-        <textarea id="w3review" name="w3review" rows={5} cols={100} onChange={e => setMsgToEdit(e.target.value)} value={msgToEdit}>
+        <textarea id="w3review" name="w3review" rows={5} cols={100} onChange={e => setMsgToEdit(e.target.value)} onKeyDown={enterToSend ? (event) => { event.key == "Enter" && send(msgToEdit) } : undefined} value={msgToEdit}>
         </textarea>
         <button onClick={() => send(msgToEdit)}>
           Send({messages.length}/{MAX_MESSAGES})
         </button>
       </div>
-      <h4>Used limit: {usedLimit}%, current message usage: {currentMsgUsage}%, combained usage: <span style={{color: combainedUsage > 90? "red": "black"}}>{combainedUsage}</span>%</h4>
+      <h4>Used limit: {usedLimit}%, current message usage: {currentMsgUsage}%, combained usage: <span style={{ color: combainedUsage > 90 ? "red" : "black" }}>{combainedUsage}</span>%</h4>
 
     </>
   )
