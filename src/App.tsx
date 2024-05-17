@@ -6,10 +6,13 @@ const openai = new OpenAI({
   apiKey: localStorage.getItem("key") as string,
   dangerouslyAllowBrowser: true
 });
-const limits: Record<string, number> = {
-  "gpt-4": 32769,
-  "gpt-4-turbo-preview": 512000
-}
+
+
+const limits: Record<OpenAI.Chat.ChatModel, number> = {
+  "gpt-4o": 1280000*4,
+  "gpt-4": 8192*4,
+  "gpt-4-turbo": 1280000*4,
+} as Record<OpenAI.Chat.ChatModel, number>
 const MAX_MESSAGES = 30
 
 function removeByIndex(arr: any[], index: number) {
@@ -24,7 +27,7 @@ type Message = OpenAI.Chat.Completions.ChatCompletionMessageParam
 function App() {
   const [messages, setMessages] = useState<Message[]>([])
   const [msgToEdit, setMsgToEdit] = useState("")
-  const [model, setModel] = useState<OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming["model"]>("gpt-4")
+  const [model, setModel] = useState<OpenAI.Chat.ChatModel>("gpt-4")
   const send = async (msg: string) => {
     const messagesAfterSend: Message[] = [...messages, { role: 'user', content: msg }, { role: 'assistant', content: "" }]
     setMessages(messagesAfterSend)
@@ -50,22 +53,21 @@ function App() {
     setMessages([...messagesAfterSend.slice(0, -1), { role: "assistant", content: response }])
   }
   useEffect(() => {
-    const savedModel = localStorage.getItem("model")
+    const savedModel = localStorage.getItem("model") as OpenAI.Chat.ChatModel
     if (savedModel !== null) {
       setModel(savedModel)
     }
   }, [])
 
-  const usedLimit =  Math.round(messages.reduce((accumulator, msg) => accumulator + (msg.content as string).length, 0,) / limits[model as string] * 10000)/100
-  const currentMsgUsage = Math.round(msgToEdit.length / limits[model as string] * 10000)/100
+  const usedLimit =  Math.round(messages.reduce((accumulator, msg) => accumulator + (msg.content as string).length, 0,) / limits[model] * 10000)/100
+  const currentMsgUsage = Math.round(msgToEdit.length / limits[model] * 10000)/100
   const combainedUsage = usedLimit + currentMsgUsage
   return (
     <>
       <div style={{ display: "flex" }}>
         <h1>ChatGPT</h1>
-        <select name="model" style={{ margin: 20 }} onChange={e => { setModel(e.target.value); localStorage.setItem("model", e.target.value) }} value={model}>
-          <option value="gpt-4-turbo-preview">gpt-4-turbo-preview</option>
-          <option value="gpt-4">gpt-4</option>
+        <select name="model" style={{ margin: 20 }} onChange={e => { setModel(e.target.value as OpenAI.Chat.ChatModel); localStorage.setItem("model", e.target.value) }} value={model}>
+          {Object.keys(limits).map((model, index) => <option key={index} value={model}>{model}</option>)}
         </select>
       </div>
 
