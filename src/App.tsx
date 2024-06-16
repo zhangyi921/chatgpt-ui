@@ -18,9 +18,9 @@ function debounce(func: Function, wait: number) {
 }
 
 const limits: Record<OpenAI.Chat.ChatModel, number> = {
-  "gpt-4o": 1280000,
+  "gpt-4o": 128000,
   "gpt-4": 8192,
-  "gpt-4-turbo": 1280000,
+  "gpt-4-turbo": 128000,
 } as Record<OpenAI.Chat.ChatModel, number>
 const MAX_MESSAGES = 30
 
