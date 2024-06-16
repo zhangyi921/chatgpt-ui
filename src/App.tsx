@@ -2,16 +2,25 @@ import { useEffect, useState } from 'react'
 import Markdown from 'react-markdown'
 import './App.css'
 import OpenAI from 'openai'
+import { encoding_for_model } from "tiktoken";
+
 const openai = new OpenAI({
   apiKey: localStorage.getItem("key") as string,
   dangerouslyAllowBrowser: true
 });
 
+let timeout: NodeJS.Timeout;
+function debounce(func: Function, wait: number) {
+  return (...args: any) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
 
 const limits: Record<OpenAI.Chat.ChatModel, number> = {
-  "gpt-4o": 1280000 * 4,
-  "gpt-4": 8192 * 4,
-  "gpt-4-turbo": 1280000 * 4,
+  "gpt-4o": 1280000,
+  "gpt-4": 8192,
+  "gpt-4-turbo": 1280000,
 } as Record<OpenAI.Chat.ChatModel, number>
 const MAX_MESSAGES = 30
 
@@ -64,8 +73,25 @@ function App() {
     }
   }, [])
 
-  const usedLimit = Math.round(messages.reduce((accumulator, msg) => accumulator + (msg.content as string).length, 0,) / limits[model] * 10000) / 100
-  const currentMsgUsage = Math.round(msgToEdit.length / limits[model] * 10000) / 100
+  const [usedLimit, setUsedLimit] = useState(0)
+  const [currentMsgTokens, setCurrentMsgTokens] = useState(0)
+  const [currentMsgUsage, setCurrentMsgUsage] = useState(0)
+  const [totalTokenUsed, setTotalTokenUsed] = useState(0)
+  const debouncedCalculate = debounce(() => {
+    const totalTokenUsed_ = messages.reduce((accumulator, msg) => accumulator + (encoding_for_model(model).encode(msg.content as string)).length, 0,)
+    setTotalTokenUsed(totalTokenUsed_)
+    const usedLimit_ = Math.round(totalTokenUsed / limits[model] * 10000) / 100
+    setUsedLimit(usedLimit_)
+    // * 10000 and then divided by 100 is to get the percentage with two decimal places.
+    const currentMsgTokens_ = encoding_for_model(model).encode(msgToEdit).length
+    setCurrentMsgTokens(currentMsgTokens_)
+    const currentMsgUsage_ = Math.round(currentMsgTokens / limits[model] * 10000) / 100
+    setCurrentMsgUsage(currentMsgUsage_)
+  }, 2000);
+  useEffect(() => {
+    debouncedCalculate()
+  }, [messages, msgToEdit])
+
   const combainedUsage = usedLimit + currentMsgUsage
   return (
     <>
@@ -108,8 +134,7 @@ function App() {
           Send({messages.length}/{MAX_MESSAGES})
         </button>
       </div>
-      <h4>Used limit: {usedLimit}%, current message usage: {currentMsgUsage}%, combained usage: <span style={{ color: combainedUsage > 90 ? "red" : "black" }}>{combainedUsage}</span>%</h4>
-
+      <h4>Used limit: {usedLimit}% ({totalTokenUsed} tokens), current message usage: {currentMsgUsage}% ({currentMsgTokens} tokens), combained usage: <span style={{ color: combainedUsage > 90 ? "red" : "black" }}>{combainedUsage}</span>%, model max token: {limits[model]}</h4>
     </>
   )
 }
