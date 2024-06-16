@@ -80,12 +80,12 @@ function App() {
   const debouncedCalculate = debounce(() => {
     const totalTokenUsed_ = messages.reduce((accumulator, msg) => accumulator + (encoding_for_model(model).encode(msg.content as string)).length, 0,)
     setTotalTokenUsed(totalTokenUsed_)
-    const usedLimit_ = Math.round(totalTokenUsed / limits[model] * 10000) / 100
+    const usedLimit_ = Math.round(totalTokenUsed_ / limits[model] * 10000) / 100
     setUsedLimit(usedLimit_)
     // * 10000 and then divided by 100 is to get the percentage with two decimal places.
     const currentMsgTokens_ = encoding_for_model(model).encode(msgToEdit).length
     setCurrentMsgTokens(currentMsgTokens_)
-    const currentMsgUsage_ = Math.round(currentMsgTokens / limits[model] * 10000) / 100
+    const currentMsgUsage_ = Math.round(currentMsgTokens_ / limits[model] * 10000) / 100
     setCurrentMsgUsage(currentMsgUsage_)
   }, 2000);
   useEffect(() => {
