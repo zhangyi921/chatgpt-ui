@@ -17,9 +17,10 @@ function debounce(func: Function, wait: number) {
   };
 }
 
+// https://platform.openai.com/docs/models
 const limits: Record<OpenAI.Chat.ChatModel, number> = {
   "gpt-4o": 128000,
-  "gpt-4": 8192,
+  "gpt-4o-mini": 128000,
   "gpt-4-turbo": 128000,
 } as Record<OpenAI.Chat.ChatModel, number>
 const MAX_MESSAGES = 30
@@ -37,7 +38,7 @@ function App() {
   const [enterToSend, setEnterToSend] = useState<boolean>(true)
   const [messages, setMessages] = useState<Message[]>([])
   const [msgToEdit, setMsgToEdit] = useState("")
-  const [model, setModel] = useState<OpenAI.Chat.ChatModel>("gpt-4")
+  const [model, setModel] = useState<OpenAI.Chat.ChatModel>("gpt-4o-mini")
   const send = async (msg: string) => {
     const messagesAfterSend: Message[] = [...messages, { role: 'user', content: msg }, { role: 'assistant', content: "" }]
     setMessages(messagesAfterSend)
@@ -78,12 +79,12 @@ function App() {
   const [currentMsgUsage, setCurrentMsgUsage] = useState(0)
   const [totalTokenUsed, setTotalTokenUsed] = useState(0)
   const debouncedCalculate = debounce(() => {
-    const totalTokenUsed_ = messages.reduce((accumulator, msg) => accumulator + (encoding_for_model(model).encode(msg.content as string)).length, 0,)
+    const totalTokenUsed_ = messages.reduce((accumulator, msg) => accumulator + (encoding_for_model(model as any).encode(msg.content as string)).length, 0,)
     setTotalTokenUsed(totalTokenUsed_)
     const usedLimit_ = Math.round(totalTokenUsed_ / limits[model] * 10000) / 100
     setUsedLimit(usedLimit_)
     // * 10000 and then divided by 100 is to get the percentage with two decimal places.
-    const currentMsgTokens_ = encoding_for_model(model).encode(msgToEdit).length
+    const currentMsgTokens_ = encoding_for_model(model as any).encode(msgToEdit).length
     setCurrentMsgTokens(currentMsgTokens_)
     const currentMsgUsage_ = Math.round(currentMsgTokens_ / limits[model] * 10000) / 100
     setCurrentMsgUsage(currentMsgUsage_)
